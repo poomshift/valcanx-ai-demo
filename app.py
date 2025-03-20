@@ -22,6 +22,25 @@ MAX_TIMEOUT = 300  # 5 minutes timeout
 POLL_INTERVAL = 4  # Check status every 4 seconds
 ERROR_RETRY_DELAY = 4  # Also wait 4 seconds on error before retry
 
+# LoRA configuration
+LORA_CONFIG = {
+    "None": {
+        "preview": None,
+        "description": "No LoRA model applied",
+        "placeholder_color": "#f0f0f0"
+    },
+    "Elysia.safetensors": {
+        "preview": "assets/lora_previews/elysia_preview.jpg",
+        "description": "Elysia character style - perfect for anime-style portraits",
+        "placeholder_color": "#ffd6e0"
+    },
+    "nolan_style_flux_v2.safetensors": {
+        "preview": "assets/lora_previews/nolan_preview.jpg",
+        "description": "Christopher Nolan inspired style - dramatic lighting and cinematic look",
+        "placeholder_color": "#2c2c2c"
+    }
+}
+
 def get_job_status(job_id):
     headers = {
         'Authorization': f'Bearer {API_KEY}'
@@ -39,16 +58,16 @@ def generate_image(prompt, negative_prompt="bad quality, low quality, bad image,
                   width=1024, height=1024, steps=20, guidance=3.5, seed=173805153958730,
                   lora_models=None, lora_strengths=None):
     if lora_models is None:
-        lora_models = ["None"] * 4
+        lora_models = ["None"] * 2
     if lora_strengths is None:
-        lora_strengths = [1.0] * 4
+        lora_strengths = [1.0] * 2
         
     headers = {
         'Content-Type': 'application/json',
         'Authorization': f'Bearer {API_KEY}'
     }
     
-    # Update the workflow data with all 4 LoRA models
+    # Update the workflow data with 2 LoRA models
     data = {
         "input": {
             "workflow": {
@@ -159,10 +178,10 @@ def generate_image(prompt, negative_prompt="bad quality, low quality, bad image,
                         "strength_01": lora_strengths[0],
                         "lora_02": lora_models[1],
                         "strength_02": lora_strengths[1],
-                        "lora_03": lora_models[2],
-                        "strength_03": lora_strengths[2],
-                        "lora_04": lora_models[3],
-                        "strength_04": lora_strengths[3],
+                        "lora_03": "None",
+                        "strength_03": 0.0,
+                        "lora_04": "None",
+                        "strength_04": 0.0,
                         "model": ["37", 0],
                         "clip": ["39", 0]
                     },
@@ -273,6 +292,42 @@ def main():
             width: 100%;
             height: auto;
         }
+        .lora-preview {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .lora-card {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+        }
+        .lora-description {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 4px;
+        }
+        .lora-placeholder {
+            width: 100%;
+            height: 120px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .lora-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -283,7 +338,7 @@ def main():
         return
 
     # Initialize LoRA variables at the start
-    lora_options = ["None", "Elysia.safetensors", "p4st3l_Pastel.safetensors"]
+    lora_options = list(LORA_CONFIG.keys())
     lora_models = []
     lora_strengths = []
 
@@ -291,109 +346,130 @@ def main():
     left_col, right_col = st.columns([1, 1])
 
     with left_col:
-        tab1, tab2 = st.tabs(["Generate", "LoRA Models"])
+        # Prompt inputs
+        prompt = st.text_area(
+            "Prompt",
+            placeholder="Describe what you want to generate...",
+            value="portrait of Elysia girl in white dress, in bedroom, harsh sun light make high contrast shadow.",
+            height=100
+        )
         
-        # LoRA tab first to initialize the variables
-        with tab2:
-            # Two columns for each LoRA pair
-            for i in range(0, 4, 2):
-                col1, col2 = st.columns(2)
-                
-                # First LoRA
-                with col1:
-                    default_index = 1 if i == 0 else 0
-                    model = st.selectbox(
-                        f"Model {i+1}",
-                        lora_options,
-                        index=default_index,
-                        key=f"lora_model_{i}"
-                    )
-                    strength = st.slider(
-                        "Strength",
-                        min_value=0.0,
-                        max_value=2.0,
-                        value=1.0 if model != "None" else 0.0,
-                        step=0.05,
-                        disabled=(model == "None"),
-                        key=f"lora_strength_{i}"
-                    )
-                    lora_models.append(model)
-                    lora_strengths.append(strength)
-                
-                # Second LoRA
-                with col2:
-                    default_index = 2 if i == 0 else 0
-                    model = st.selectbox(
-                        f"Model {i+2}",
-                        lora_options,
-                        index=default_index,
-                        key=f"lora_model_{i+1}"
-                    )
-                    # Set default strength to 0.75 for p4st3l_Pastel (second LoRA)
-                    default_strength = 0.75 if (i == 0 and default_index == 2) else 1.0
-                    strength = st.slider(
-                        "Strength",
-                        min_value=0.0,
-                        max_value=2.0,
-                        value=default_strength if model != "None" else 0.0,
-                        step=0.05,
-                        disabled=(model == "None"),
-                        key=f"lora_strength_{i+1}"
-                    )
-                    lora_models.append(model)
-                    lora_strengths.append(strength)
+        negative_prompt = st.text_area(
+            "Negative Prompt",
+            value="bad quality, low quality, bad image, lowres",
+            height=50
+        )
         
-        with tab1:
-            # Prompt inputs
-            prompt = st.text_area(
-                "Prompt",
-                placeholder="Describe what you want to generate...",
-                value="p4st3l photography portrait of Elysia girl in white dress, in bedroom, harsh sun light make high contrast shadow.",
-                height=100
+        # LoRA Selection Section
+        
+        # Create a grid of LoRA selections
+        col1, col2 = st.columns(2)
+        
+        # First LoRA
+        with col1:
+            st.markdown("#### LoRA 1")
+            default_index = 1
+            model = st.selectbox(
+                "Model",
+                lora_options,
+                index=default_index,
+                key="lora_model_0"
             )
             
-            negative_prompt = st.text_area(
-                "Negative Prompt",
-                value="bad quality, low quality, bad image, lowres",
-                height=50
+            # Show preview or placeholder
+            if LORA_CONFIG[model]["preview"] and os.path.exists(LORA_CONFIG[model]["preview"]):
+                st.image(LORA_CONFIG[model]["preview"], use_column_width=True)
+            else:
+                placeholder_color = LORA_CONFIG[model]["placeholder_color"]
+                st.markdown(f"""
+                    <div class="lora-placeholder" style="background-color: {placeholder_color}">
+                        {LORA_CONFIG[model]["description"]}
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            strength = st.slider(
+                "Strength",
+                min_value=0.0,
+                max_value=2.0,
+                value=1.0 if model != "None" else 0.0,
+                step=0.05,
+                disabled=(model == "None"),
+                key="lora_strength_0"
+            )
+            lora_models.append(model)
+            lora_strengths.append(strength)
+        
+        # Second LoRA
+        with col2:
+            st.markdown("#### LoRA 2")
+            default_index = 0
+            model = st.selectbox(
+                "Model",
+                lora_options,
+                index=default_index,
+                key="lora_model_1"
             )
             
-            # All settings in columns
-            col1, col2 = st.columns(2)
+            # Show preview or placeholder
+            if LORA_CONFIG[model]["preview"] and os.path.exists(LORA_CONFIG[model]["preview"]):
+                st.image(LORA_CONFIG[model]["preview"], use_column_width=True)
+            else:
+                placeholder_color = LORA_CONFIG[model]["placeholder_color"]
+                st.markdown(f"""
+                    <div class="lora-placeholder" style="background-color: {placeholder_color}">
+                        {LORA_CONFIG[model]["description"]}
+                    </div>
+                """, unsafe_allow_html=True)
             
-            with col1:
-                width = st.select_slider(
-                    "Width",
-                    options=[512, 576, 640, 704, 768, 832, 896, 960, 1024],
-                    value=1024
+            strength = st.slider(
+                "Strength",
+                min_value=0.0,
+                max_value=2.0,
+                value=1.0 if model != "None" else 0.0,
+                step=0.05,
+                disabled=(model == "None"),
+                key="lora_strength_1"
+            )
+            lora_models.append(model)
+            lora_strengths.append(strength)
+        
+        # Generation settings
+        st.markdown("### Generation Settings")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            width = st.select_slider(
+                "Width",
+                options=[512, 576, 640, 704, 768, 832, 896, 960, 1024],
+                value=1024
+            )
+            height = st.select_slider(
+                "Height",
+                options=[512, 576, 640, 704, 768, 832, 896, 960, 1024],
+                value=1024
+            )
+        
+        with col2:
+            steps = st.slider("Steps", min_value=1, max_value=100, value=20)
+            seed_value = st.number_input("Seed", value=173805153958730)
+        
+        # Generate button
+        if st.button("Generate", use_container_width=True, type="primary"):
+            with st.spinner("Creating your image..."):
+                image = generate_image(
+                    prompt=prompt,
+                    negative_prompt=negative_prompt,
+                    width=width,
+                    height=height,
+                    steps=steps,
+                    guidance=3.5,  # Fixed value instead of slider
+                    seed=seed_value,
+                    lora_models=lora_models,
+                    lora_strengths=lora_strengths
                 )
-                height = st.select_slider(
-                    "Height",
-                    options=[512, 576, 640, 704, 768, 832, 896, 960, 1024],
-                    value=1024
-                )
-            
-            with col2:
-                steps = st.slider("Steps", min_value=1, max_value=100, value=20)
-                seed_value = st.number_input("Seed", value=173805153958730)
-            
-            # Generate button
-            if st.button("Generate", use_container_width=True, type="primary"):
-                with st.spinner("Creating your image..."):
-                    image = generate_image(
-                        prompt=prompt,
-                        negative_prompt=negative_prompt,
-                        width=width,
-                        height=height,
-                        steps=steps,
-                        guidance=3.5,  # Fixed value instead of slider
-                        seed=seed_value,
-                        lora_models=lora_models,
-                        lora_strengths=lora_strengths
-                    )
-                    if image:
-                        # Store the generated image in session state
-                        st.session_state['generated_image'] = image
+                if image:
+                    # Store the generated image in session state
+                    st.session_state['generated_image'] = image
 
     # Right column for displaying the image
     with right_col:
