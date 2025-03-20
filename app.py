@@ -34,6 +34,11 @@ LORA_CONFIG = {
         "description": "Elysia character style - perfect for anime-style portraits",
         "placeholder_color": "#ffd6e0"
     },
+    "p4st3l_Pastel.safetensors": {
+        "preview": "assets/lora_previews/pastel_preview.jpg",
+        "description": "Soft pastel style - creates dreamy, ethereal images",
+        "placeholder_color": "#e6f3ff"
+    },
     "nolan_style_flux_v2.safetensors": {
         "preview": "assets/lora_previews/nolan_preview.jpg",
         "description": "Christopher Nolan inspired style - dramatic lighting and cinematic look",
@@ -350,7 +355,7 @@ def main():
         prompt = st.text_area(
             "Prompt",
             placeholder="Describe what you want to generate...",
-            value="portrait of Elysia girl in white dress, in bedroom, harsh sun light make high contrast shadow.",
+            value="p4st3l photography portrait of Elysia girl in white dress, in bedroom, harsh sun light make high contrast shadow.",
             height=100
         )
         
@@ -402,7 +407,7 @@ def main():
         # Second LoRA
         with col2:
             st.markdown("#### LoRA 2")
-            default_index = 0
+            default_index = 2
             model = st.selectbox(
                 "Model",
                 lora_options,
@@ -421,11 +426,13 @@ def main():
                     </div>
                 """, unsafe_allow_html=True)
             
+            # Set default strength to 0.75 for p4st3l_Pastel
+            default_strength = 0.75 if model == "p4st3l_Pastel.safetensors" else 1.0
             strength = st.slider(
                 "Strength",
                 min_value=0.0,
                 max_value=2.0,
-                value=1.0 if model != "None" else 0.0,
+                value=default_strength if model != "None" else 0.0,
                 step=0.05,
                 disabled=(model == "None"),
                 key="lora_strength_1"
