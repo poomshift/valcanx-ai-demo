@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configure page
-st.set_page_config(page_title="ValcanX AI Demo", page_icon="🎨")
+st.set_page_config(page_title="VulcanX AI Demo", page_icon="🎨")
 
 # Constants
 RUNPOD_ENDPOINT_ID = "gh9cabj4pp1xgs"
