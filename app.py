@@ -336,7 +336,7 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("<h1 style='text-align: center; margin-bottom: 2rem;'>🎨 ValcanX AI Demo</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; margin-bottom: 2rem;'>🎨 VulcanX AI Demo</h1>", unsafe_allow_html=True)
     
     if not API_KEY:
         st.error("Please set your RUNPOD_API_KEY in the .env file")
