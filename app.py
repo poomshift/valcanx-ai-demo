@@ -71,6 +71,12 @@ LORA_CONFIG = {
         "description": "Som Tum Thai papaya salad style - fresh ingredients and Thai cuisine",
         "placeholder_color": "#ff6347",
         "triggerword": "SomTumThai"
+    },
+    "Pratukhong_BombV1_flux_v1.safetensors": {
+        "preview": "assets/lora_previews/pratukhong_preview.jpg",
+        "description": "Pratukhong, A photograph of an ancient temple, likely a Buddhist temple, features a prominent, ornate archway with intricate carvings and a central figure, likely Buddha, seated in a meditative pose",
+        "placeholder_color": "#ff4500",
+        "triggerword": "Pratukhong, A photograph of an ancient temple, likely a Buddhist temple, features a prominent, ornate archway with intricate carvings and a central figure, likely Buddha, seated in a meditative pose"
     }
 }
 
