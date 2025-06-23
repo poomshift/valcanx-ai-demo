@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configure page
-st.set_page_config(page_title="ValcanX AI Demo", page_icon="🎨")
+st.set_page_config(page_title="Prateep AI Demo", page_icon="🎨")
 
 # Constants
 RUNPOD_ENDPOINT_ID = "gh9cabj4pp1xgs"
@@ -27,22 +27,50 @@ LORA_CONFIG = {
     "None": {
         "preview": None,
         "description": "No LoRA model applied",
-        "placeholder_color": "#f0f0f0"
+        "placeholder_color": "#f0f0f0",
+        "triggerword": ""
     },
-    "Elysia.safetensors": {
-        "preview": "assets/lora_previews/elysia_preview.jpg",
-        "description": "Elysia character style - perfect for anime-style portraits",
-        "placeholder_color": "#ffd6e0"
+    # "Elysia.safetensors": {
+    #     "preview": "assets/lora_previews/elysia_preview.jpg",
+    #     "description": "Elysia character style - perfect for anime-style portraits",
+    #     "placeholder_color": "#ffd6e0",
+    #     "triggerword": "Elysia"
+    # },
+    # "p4st3l_Pastel.safetensors": {
+    #     "preview": "assets/lora_previews/pastel_preview.jpg",
+    #     "description": "Soft pastel style - creates dreamy, ethereal images",
+    #     "placeholder_color": "#e6f3ff",
+    #     "triggerword": "p4st3l"
+    # },
+    # "nolan_style_flux_v2.safetensors": {
+    #     "preview": "assets/lora_previews/nolan_preview.jpg",
+    #     "description": "Christopher Nolan inspired style - dramatic lighting and cinematic look",
+    #     "placeholder_color": "#2c2c2c",
+    #     "triggerword": "nolan style"
+    # },
+    "Benjarong_flux_v1.safetensors": {
+        "preview": "assets/lora_previews/benjarong_preview.jpg",
+        "description": "Benjarong traditional Thai ceramic style - ornate patterns and gold details",
+        "placeholder_color": "#ffd700",
+        "triggerword": "Benjarong ornate designs"
     },
-    "p4st3l_Pastel.safetensors": {
-        "preview": "assets/lora_previews/pastel_preview.jpg",
-        "description": "Soft pastel style - creates dreamy, ethereal images",
-        "placeholder_color": "#e6f3ff"
+    "WaiKru_flux_v1.safetensors": {
+        "preview": "assets/lora_previews/waikru_preview.jpg",
+        "description": "WaiKru traditional Thai school ceremony",
+        "placeholder_color": "#ff9933",
+        "triggerword": "WaiKru, traditional Thai school ceremony"
     },
-    "nolan_style_flux_v2.safetensors": {
-        "preview": "assets/lora_previews/nolan_preview.jpg",
-        "description": "Christopher Nolan inspired style - dramatic lighting and cinematic look",
-        "placeholder_color": "#2c2c2c"
+    "ChickenGreenCurry.safetensors": {
+        "preview": "assets/lora_previews/chickencurry_preview.jpg",
+        "description": "Thai Green Curry style - vibrant green colors and food photography",
+        "placeholder_color": "#228b22",
+        "triggerword": "ChickenGreenCurry,a yellow-colored curry or stew"
+    },
+    "SomTumThai.safetensors": {
+        "preview": "assets/lora_previews/somtum_preview.jpg",
+        "description": "Som Tum Thai papaya salad style - fresh ingredients and Thai cuisine",
+        "placeholder_color": "#ff6347",
+        "triggerword": "SomTumThai"
     }
 }
 
@@ -336,11 +364,18 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("<h1 style='text-align: center; margin-bottom: 2rem;'>🎨 ValcanX AI Demo</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; margin-bottom: 2rem;'>🎨 Prateep AI Demo</h1>", unsafe_allow_html=True)
     
     if not API_KEY:
         st.error("Please set your RUNPOD_API_KEY in the .env file")
         return
+
+    # Initialize session state for tracking LoRA selections
+    if 'previous_loras' not in st.session_state:
+        st.session_state.previous_loras = ["None", "None"]
+    
+    if 'base_prompt' not in st.session_state:
+        st.session_state.base_prompt = "product photography of Benjarong ornate designs bowl on wooden table in cozy thai kitchen, vegetables on background"
 
     # Initialize LoRA variables at the start
     lora_options = list(LORA_CONFIG.keys())
@@ -351,12 +386,17 @@ def main():
     left_col, right_col = st.columns([1, 1])
 
     with left_col:
-        # Prompt inputs
+        # Prompt inputs (moved to top)
+        st.markdown("### Prompt")
+        
+        # Initialize prompt value
+        prompt_value = st.session_state.get('updated_prompt', st.session_state.base_prompt)
         prompt = st.text_area(
             "Prompt",
             placeholder="Describe what you want to generate...",
-            value="p4st3l photography portrait of Elysia girl in white dress, in bedroom, harsh sun light make high contrast shadow.",
-            height=100
+            value=prompt_value,
+            height=100,
+            key="prompt_input"
         )
         
         negative_prompt = st.text_area(
@@ -366,6 +406,7 @@ def main():
         )
         
         # LoRA Selection Section
+        st.markdown("### LoRA Models")
         
         # Create a grid of LoRA selections
         col1, col2 = st.columns(2)
@@ -373,8 +414,8 @@ def main():
         # First LoRA
         with col1:
             st.markdown("#### LoRA 1")
-            default_index = 1
-            model = st.selectbox(
+            default_index = 1 if len(lora_options) > 1 else 0
+            model1 = st.selectbox(
                 "Model",
                 lora_options,
                 index=default_index,
@@ -382,33 +423,37 @@ def main():
             )
             
             # Show preview or placeholder
-            if LORA_CONFIG[model]["preview"] and os.path.exists(LORA_CONFIG[model]["preview"]):
-                st.image(LORA_CONFIG[model]["preview"], use_column_width=True)
+            if LORA_CONFIG[model1]["preview"] and os.path.exists(LORA_CONFIG[model1]["preview"]):
+                st.image(LORA_CONFIG[model1]["preview"], use_column_width=True)
             else:
-                placeholder_color = LORA_CONFIG[model]["placeholder_color"]
+                placeholder_color = LORA_CONFIG[model1]["placeholder_color"]
                 st.markdown(f"""
                     <div class="lora-placeholder" style="background-color: {placeholder_color}">
-                        {LORA_CONFIG[model]["description"]}
+                        {LORA_CONFIG[model1]["description"]}
                     </div>
                 """, unsafe_allow_html=True)
             
-            strength = st.slider(
+            # Show trigger word if available
+            if LORA_CONFIG[model1]["triggerword"]:
+                st.info(f"Trigger word: **{LORA_CONFIG[model1]['triggerword']}**")
+            
+            strength1 = st.slider(
                 "Strength",
                 min_value=0.0,
                 max_value=2.0,
-                value=1.0 if model != "None" else 0.0,
+                value=1.0 if model1 != "None" else 0.0,
                 step=0.05,
-                disabled=(model == "None"),
+                disabled=(model1 == "None"),
                 key="lora_strength_0"
             )
-            lora_models.append(model)
-            lora_strengths.append(strength)
+            lora_models.append(model1)
+            lora_strengths.append(strength1)
         
         # Second LoRA
         with col2:
             st.markdown("#### LoRA 2")
-            default_index = 2
-            model = st.selectbox(
+            default_index = 0 if len(lora_options) > 2 else 0
+            model2 = st.selectbox(
                 "Model",
                 lora_options,
                 index=default_index,
@@ -416,29 +461,81 @@ def main():
             )
             
             # Show preview or placeholder
-            if LORA_CONFIG[model]["preview"] and os.path.exists(LORA_CONFIG[model]["preview"]):
-                st.image(LORA_CONFIG[model]["preview"], use_column_width=True)
+            if LORA_CONFIG[model2]["preview"] and os.path.exists(LORA_CONFIG[model2]["preview"]):
+                st.image(LORA_CONFIG[model2]["preview"], use_column_width=True)
             else:
-                placeholder_color = LORA_CONFIG[model]["placeholder_color"]
+                placeholder_color = LORA_CONFIG[model2]["placeholder_color"]
                 st.markdown(f"""
                     <div class="lora-placeholder" style="background-color: {placeholder_color}">
-                        {LORA_CONFIG[model]["description"]}
+                        {LORA_CONFIG[model2]["description"]}
                     </div>
                 """, unsafe_allow_html=True)
             
-            # Set default strength to 0.75 for p4st3l_Pastel
-            default_strength = 0.75 if model == "p4st3l_Pastel.safetensors" else 1.0
-            strength = st.slider(
+            # Show trigger word if available
+            if LORA_CONFIG[model2]["triggerword"]:
+                st.info(f"Trigger word: **{LORA_CONFIG[model2]['triggerword']}**")
+            
+            strength2 = st.slider(
                 "Strength",
                 min_value=0.0,
                 max_value=2.0,
-                value=default_strength if model != "None" else 0.0,
+                value=1.0 if model2 != "None" else 0.0,
                 step=0.05,
-                disabled=(model == "None"),
+                disabled=(model2 == "None"),
                 key="lora_strength_1"
             )
-            lora_models.append(model)
-            lora_strengths.append(strength)
+            lora_models.append(model2)
+            lora_strengths.append(strength2)
+
+        # Check if LoRA selection changed and update prompt
+        current_loras = [model1, model2]
+        if current_loras != st.session_state.previous_loras:
+            # Get current prompt text
+            current_prompt = prompt if 'prompt' in locals() else st.session_state.get('updated_prompt', st.session_state.base_prompt)
+            
+            # Update the prompt with trigger words
+            trigger_words = []
+            for model in current_loras:
+                if model != "None" and LORA_CONFIG[model]["triggerword"]:
+                    trigger_word = LORA_CONFIG[model]["triggerword"]
+                    # Only add trigger word if it's not already in the prompt
+                    if trigger_word.lower() not in current_prompt.lower():
+                        trigger_words.append(trigger_word)
+            
+            # Build new prompt
+            if trigger_words:
+                # Add new trigger words to the beginning of existing prompt
+                new_prompt = " ".join(trigger_words) + " " + current_prompt
+            else:
+                new_prompt = current_prompt
+            
+            # Update session state
+            st.session_state.previous_loras = current_loras
+            
+            # Force rerun to update the text area
+            if 'updated_prompt' not in st.session_state or st.session_state.updated_prompt != new_prompt:
+                st.session_state.updated_prompt = new_prompt
+                st.rerun()
+
+        # Update base prompt when user manually edits (remove trigger words to get base)
+        current_trigger_words = []
+        for model in current_loras:
+            if model != "None" and LORA_CONFIG[model]["triggerword"]:
+                current_trigger_words.append(LORA_CONFIG[model]["triggerword"])
+        
+        # Extract base prompt by removing trigger words from the beginning
+        if current_trigger_words:
+            # Create a copy of the prompt to work with
+            temp_prompt = prompt
+            # Remove each trigger word if it's at the beginning
+            for trigger_word in current_trigger_words:
+                if temp_prompt.lower().startswith(trigger_word.lower() + " "):
+                    temp_prompt = temp_prompt[len(trigger_word) + 1:]
+                elif temp_prompt.lower().startswith(trigger_word.lower()):
+                    temp_prompt = temp_prompt[len(trigger_word):]
+            st.session_state.base_prompt = temp_prompt.strip()
+        else:
+            st.session_state.base_prompt = prompt
         
         # Generation settings
         st.markdown("### Generation Settings")
